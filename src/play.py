@@ -37,7 +37,10 @@ def main(cfg: DictConfig):
         world_model = WorldModel(obs_vocab_size=tokenizer.vocab_size, act_vocab_size=test_env.num_actions, config=instantiate(cfg.world_model))
         actor_critic = ActorCritic(**cfg.actor_critic, act_vocab_size=test_env.num_actions)
         agent = Agent(tokenizer, world_model, actor_critic).to(device)
-        agent.load(Path('checkpoints/last.pt'), device)        
+        if "Pong" in cfg.env.train.id: file_name = "Pong.pt"
+        elif "Breakout" in cfg.env.train.id: file_name = "Breakout.pt"
+        else: ""
+        agent.load(Path('models/' + file_name), device)        
 
         if cfg.mode == 'play_in_world_model':
             env = WorldModelEnv(tokenizer=agent.tokenizer, world_model=agent.world_model, device=device, env=env_fn())

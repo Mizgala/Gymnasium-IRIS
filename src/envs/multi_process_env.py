@@ -35,10 +35,10 @@ def child_env(child_id: int, env_fn: Callable, child_conn: Connection) -> None:
             obs = env.reset()
             child_conn.send(Message(MessageType.RESET_RETURN, obs))
         elif message_type == MessageType.STEP:
-            obs, rew, done, _ = env.step(content)
-            if done:
+            obs, rew, terminated, truncated, _ = env.step(content)
+            if terminated or truncated:
                 obs = env.reset()
-            child_conn.send(Message(MessageType.STEP_RETURN, (obs, rew, done, None)))
+            child_conn.send(Message(MessageType.STEP_RETURN, (obs, rew, terminated, truncated, None)))
         elif message_type == MessageType.CLOSE:
             child_conn.close()
             return
@@ -80,8 +80,8 @@ class MultiProcessEnv(DoneTrackerEnv):
         for parent_conn, action in zip(self.parent_conns, actions):
             parent_conn.send(Message(MessageType.STEP, action))
         content = self._receive(check_type=MessageType.STEP_RETURN)
-        obs, rew, done, _ = zip(*content)
-        done = np.stack(done)
+        obs, rew, terminated, truncated, _ = zip(*content)
+        done = np.stack(terminated) + np.stack(truncated)
         self.update_done_tracker(done)
         return np.stack(obs), np.stack(rew), done, None
 

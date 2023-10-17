@@ -2,7 +2,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Tuple, Union
 
-import gym
+import gymnasium as gym
 import numpy as np
 import pygame
 from PIL import Image
@@ -69,6 +69,7 @@ class Game:
 
         episode_buffer = []
         segment_buffer = []
+        action_buffer = []
         recording = False
 
         do_reset, do_wait = False, False
@@ -93,9 +94,10 @@ class Game:
                         print('Started recording.')
                     else:
                         print('Stopped recording.')    
-                        self.save_recording(np.stack(segment_buffer))
+                        self.save_recording(np.stack(segment_buffer), np.stack(action_buffer))
                         recording = False
                         segment_buffer = []
+                        action_buffer = []
 
             if action == 0:
                 pressed = pygame.key.get_pressed()
@@ -115,6 +117,10 @@ class Game:
 
             if recording:
                 segment_buffer.append(np.array(img))
+                if len(action_buffer) != 0:
+                    action_buffer.append(np.array(self.env.action_names.index(info['action'])))
+                else:
+                    action_buffer.append(np.array(-1))
 
             if self.record_mode:
                 episode_buffer.append(np.array(img))
@@ -143,9 +149,12 @@ class Game:
 
         pygame.quit()
 
-    def save_recording(self, frames):
+    def save_recording(self, frames, actions=None):
         self.record_dir.mkdir(exist_ok=True, parents=True)
         timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        np.save(self.record_dir / timestamp, frames)
+        if actions is None:
+            np.save(self.record_dir / timestamp, frames)
+        else:
+            np.savez(self.record_dir / timestamp, frames=frames, actions=actions)
         make_video(self.record_dir / f'{timestamp}.mp4', fps=15, frames=frames)
         print(f'Saved recording {timestamp}.')
