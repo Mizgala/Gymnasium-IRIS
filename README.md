@@ -1,3 +1,5 @@
+# Version of the IRIS World Model updated to use Gymnasium
+
 # Transformers are Sample-Efficient World Models (IRIS)
 
 [Transformers are Sample-Efficient World Models](https://openreview.net/forum?id=vhFu1Acb0xb) <br>
